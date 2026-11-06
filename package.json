@@ -1,0 +1,30 @@
+{
+  "name": "pdf-combiner",
+  "version": "1.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "npm run build && node scripts/build-native.mjs && electron .",
+    "preview": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "package:mac": "npm run build && node scripts/build-native.mjs && node scripts/package-desktop.mjs",
+    "test": "node scripts/build-native.mjs && node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.5.438"
+  },
+  "devDependencies": {
+    "@electron/packager": "20.3.0",
+    "@napi-rs/canvas": "1.1.0",
+    "electron": "45.2.3"
+  },
+  "productName": "Paperjoin",
+  "main": "electron/main.cjs",
+  "description": "A private PDF workspace for your Mac",
+  "author": "Jeffrey Miao",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}

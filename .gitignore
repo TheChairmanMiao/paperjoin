@@ -1,0 +1,10 @@
+node_modules/
+dist/
+artifacts/
+output/
+native/bin/
+.openai/
+.env
+.env.*
+*.log
+.DS_Store

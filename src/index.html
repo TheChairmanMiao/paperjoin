@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Combine PDFs and images into one neatly ordered PDF. Arrange, rotate, and export locally on your Mac.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; worker-src 'self' blob:; img-src 'self' blob: data:; style-src 'self'; connect-src 'self' blob:; object-src 'none'; frame-src blob:; base-uri 'self'; form-action 'none'">
+  <title>Paperjoin — PDF combiner</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script type="importmap">{"imports":{"pdf-lib":"./vendor/pdf-lib.js"}}</script>
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="icon-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4"/></symbol>
+    <symbol id="icon-lock" viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 5v2"/></symbol>
+    <symbol id="icon-close" viewBox="0 0 24 24"><path d="m6 6 12 12M6 18 18 6"/></symbol>
+    <symbol id="icon-rotate" viewBox="0 0 24 24"><path d="M20 10a8 8 0 1 0-2 8M20 4v6h-6"/></symbol>
+    <symbol id="icon-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7"/></symbol>
+    <symbol id="icon-left" viewBox="0 0 24 24"><path d="m14 6-6 6 6 6"/></symbol>
+    <symbol id="icon-right" viewBox="0 0 24 24"><path d="m10 6 6 6-6 6"/></symbol>
+    <symbol id="icon-grip" viewBox="0 0 24 24"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" stroke-width="3.5"/></symbol>
+    <symbol id="icon-undo" viewBox="0 0 24 24"><path d="M4 9h10a6 6 0 0 1 0 12M4 9l5-5M4 9l5 5"/></symbol>
+    <symbol id="icon-file" viewBox="0 0 24 24"><path d="M14 3H5v18h14V8l-5-5Zm0 0v5h5M8 12h8m-8 4h6"/></symbol>
+    <symbol id="icon-check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></symbol>
+    <symbol id="icon-upload" viewBox="0 0 24 24"><path d="M12 16V4m-5 5 5-5 5 5M4 16v5h16v-5"/></symbol>
+    <symbol id="icon-pages" viewBox="0 0 24 24"><path d="M8 3h12v15H8zM4 7v14h12"/></symbol>
+  </svg>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <span class="brand" aria-label="Paperjoin">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span></span>
+        <span>Paperjoin<span class="brand-dot">.</span></span>
+      </span>
+      <span class="header-section">Workspace</span>
+      <span class="privacy-pill"><svg aria-hidden="true"><use href="#icon-lock"></use></svg><span>Files stay on this Mac</span></span>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <section class="intro" aria-labelledby="page-title">
+      <span class="eyebrow"><span class="eyebrow-dot"></span>PDF + PNG + JPG</span>
+      <h1 id="page-title">One PDF.<br class="mobile-break"> Everything in order.</h1>
+      <p>Add your documents, arrange the pages, and bring it all together.</p>
+    </section>
+
+    <div class="workspace-layout">
+      <section class="workspace" aria-labelledby="workspace-title">
+        <div class="workspace-heading">
+          <div class="workspace-heading-title"><h2 id="workspace-title">Your pages</h2><span id="workspace-summary" class="count-label">No pages yet</span></div>
+          <div class="workspace-tools">
+            <button id="undo-button" class="text-button" type="button" hidden><svg aria-hidden="true"><use href="#icon-undo"></use></svg>Undo</button>
+            <button id="clear-all" class="text-button clear-button" type="button" disabled>Clear all</button>
+            <button id="add-more" class="secondary-button compact-button" type="button"><svg aria-hidden="true"><use href="#icon-plus"></use></svg>Add files</button>
+          </div>
+        </div>
+
+        <input id="file-input" class="visually-hidden" type="file" multiple accept="application/pdf,image/png,image/jpeg,.pdf,.png,.jpg,.jpeg" aria-label="Choose PDF or image files">
+        <section id="dropzone" class="dropzone" aria-label="Add PDF and image files">
+          <div id="empty-state" class="empty-state">
+            <div class="empty-art" aria-hidden="true">
+              <svg width="112" height="102" viewBox="0 0 112 102" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g transform="rotate(-13 40 55)"><rect x="12" y="15" width="53" height="71" rx="6" fill="#F0F0EC" stroke="#D7D8D1"/><path d="M23 33h27M23 41h27M23 49h18" stroke="#C4C6BC" stroke-width="3" stroke-linecap="round"/></g>
+                <g transform="rotate(9 72 50)"><rect x="43" y="10" width="54" height="72" rx="6" fill="white" stroke="#CECFCA"/><path d="M55 28h29M55 36h29M55 44h20" stroke="#DBDCE7" stroke-width="3" stroke-linecap="round"/><rect x="55" y="56" width="29" height="13" rx="2" fill="#EEEDF9"/></g>
+                <circle cx="86" cy="78" r="17" fill="#5850CB" stroke="#F8F8F5" stroke-width="4"/><path d="M86 71v14m-7-7h14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <h3>Drop your files here</h3>
+            <p>Start with PDFs, images, or a little of both.</p>
+            <button id="add-files" class="primary-button upload-button" type="button"><svg aria-hidden="true"><use href="#icon-plus"></use></svg>Choose files</button>
+            <span class="dropzone-formats" title="Up to 50 MB per file, 150 MB total, and 500 pages per document.">PDF, PNG, JPG · 50 MB/file · 150 MB total · 500 pages</span>
+          </div>
+          <div class="compact-dropzone" aria-hidden="true"><span class="upload-icon"><svg><use href="#icon-upload"></use></svg></span><div><strong>Drop more files here</strong><span>Or use Add files above</span></div><span class="compact-format-label" title="PDF, PNG, JPG. Up to 50 MB per file, 150 MB total, and 500 pages per document.">PDF · PNG · JPG</span></div>
+        </section>
+
+        <div id="error-list" class="error-list" role="alert" aria-live="assertive"></div>
+        <div class="arrangement-hint"><svg aria-hidden="true"><use href="#icon-grip"></use></svg>Drag pages to reorder, or use the arrow buttons.</div>
+        <div id="pages-grid" class="pages-grid" aria-label="Document pages"></div>
+
+        <section class="sources-section" aria-labelledby="sources-title">
+          <h3 id="sources-title" class="source-heading">Source files</h3>
+          <div id="files-list" class="files-list"></div>
+        </section>
+
+        <div class="workspace-note"><span class="note-icon" aria-hidden="true"><svg><use href="#icon-pages"></use></svg></span><p>From a few loose files<br><strong>to one finished document.</strong></p></div>
+      </section>
+
+      <aside class="export-panel" aria-labelledby="export-title">
+        <div class="export-panel-heading"><span class="panel-icon"><svg aria-hidden="true"><use href="#icon-download"></use></svg></span><div><h2 id="export-title">Make it one PDF</h2><p>A little order goes a long way.</p></div></div>
+        <form id="export-form">
+          <div class="form-field"><label for="filename">File name</label><div class="filename-input"><input id="filename" name="filename" type="text" value="combined-document" autocomplete="off" spellcheck="false" maxlength="120" aria-describedby="filename-help"><span>.pdf</span></div><span id="filename-help" class="field-help">Give your combined document a name.</span></div>
+          <div class="form-field compression-field">
+            <label for="compression">Compression</label>
+            <select id="compression" name="compression" aria-describedby="compression-description compression-help">
+              <option value="none">Original quality</option>
+              <option value="high">High quality · light compression</option>
+              <option value="balanced">Balanced · recommended</option>
+              <option value="small">Smallest file · lower quality</option>
+            </select>
+            <p id="compression-description" class="field-help">Keeps the original image quality.</p>
+            <p id="compression-help" class="field-help">Works on PDFs and images. Existing selectable text is preserved.</p>
+          </div>
+          <fieldset class="image-options">
+            <legend>Image page settings</legend>
+            <div class="form-field"><label for="image-size">Page size</label><select id="image-size" name="image-size"><option value="original">Original image size</option><option value="a4">A4</option><option value="letter">US Letter</option></select></div>
+            <div class="form-field"><label for="image-margin">Margins</label><select id="image-margin" name="image-margin"><option value="0">None</option><option value="18">Small · ¼ inch</option><option value="36">Standard · ½ inch</option></select></div>
+            <p class="field-help">Applies to images only. PDF pages keep their original size.</p>
+          </fieldset>
+          <div class="export-total"><span>Ready to combine</span><strong id="export-summary">0 pages</strong></div>
+          <button id="export-button" class="primary-button export-button" type="submit" disabled><svg aria-hidden="true"><use href="#icon-download"></use></svg><span id="export-label">Export PDF</span></button>
+          <p class="export-note">Your original files stay unchanged.</p>
+        </form>
+        <div id="result-panel" class="result-panel" hidden><span class="result-check"><svg aria-hidden="true"><use href="#icon-check"></use></svg></span><div><strong>Your PDF is ready</strong><p id="result-summary"></p><p id="compression-result" hidden></p><a id="download-again" href="#" download>Save again<svg aria-hidden="true"><use href="#icon-download"></use></svg></a></div></div>
+      </aside>
+    </div>
+
+    <div id="status-message" class="status-message" role="status" aria-live="polite" aria-atomic="true"></div>
+    <footer class="site-footer"><span><svg aria-hidden="true"><use href="#icon-lock"></use></svg>Private by design. Everything stays on your Mac.</span><span>Files clear when you close the app.</span></footer>
+  </main>
+
+  <dialog id="preview-dialog" class="preview-dialog" aria-labelledby="preview-title"><div class="preview-heading"><h2 id="preview-title">Page preview</h2><button id="preview-close" class="icon-button" type="button" aria-label="Close preview"><svg aria-hidden="true"><use href="#icon-close"></use></svg></button></div><div class="preview-canvas"><img id="preview-image" alt="Preview of selected page"></div><p class="preview-help">Press Esc or close to return to your pages.</p></dialog>
+  <noscript><div class="noscript-note">Paperjoin needs JavaScript to combine your files. Your documents are processed locally on your Mac.</div></noscript>
+</body>
+</html>
