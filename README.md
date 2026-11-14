@@ -4,7 +4,7 @@ A personal Mac app for combining PDFs, PNGs, and JPEGs into a single PDF. Files 
 
 ## Use
 
-After building with `npm run package:mac` (see Development below), open `output/desktop/1.1.1/Paperjoin-darwin-arm64/Paperjoin.app`. You can copy the app to your Applications folder if you want to keep it there.
+After building with `npm run package:mac` (see Development below), open `output/desktop/1.1.2/Paperjoin-darwin-arm64/Paperjoin.app`. You can copy the app to your Applications folder if you want to keep it there.
 
 1. Choose **Add files** or press **⌘O**. You can also drop files into the workspace.
 2. Drag pages into order, or use their arrow buttons. Click a thumbnail for a larger preview. Rotate or remove pages as needed; **Undo** reverses the last page change.
@@ -20,7 +20,7 @@ The original files are unchanged. The workspace is temporary and clears when the
 - **Balanced**: JPEG compression with images capped at 150 dpi; intended for everyday sharing.
 - **Smallest file**: stronger JPEG compression with images capped at 96 dpi; images may look softer.
 
-Compression applies to images already inside PDFs as well as image files you add. Existing text and vector content are retained; pages are not turned into pictures. Results show the actual size reduction compared with the assembled PDF before compression. A compressed version is used only when it is smaller; otherwise the original quality is retained. Savings vary with the input, especially for text-only or previously optimized PDFs.
+Compression applies to images already inside PDFs as well as image files you add. Existing text and vector content are retained; pages are not turned into pictures. Results show the actual size reduction compared with the assembled PDF before compression. Every compression preset first applies lossless stream optimization. Image recompression is then used only when it produces a smaller PDF while preserving selectable text and page geometry. PDFs with fonts that macOS cannot rewrite safely use lossless optimization instead; the result explains when original quality is retained. Savings vary with the input, especially for text-only or previously optimized PDFs.
 
 A bundled native helper uses macOS PDFKit and Quartz image filters. It runs locally without installing an additional tool. Temporary files are removed when processing finishes, and failed compression leaves the workspace intact.
 

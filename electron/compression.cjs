@@ -12,14 +12,15 @@ async function compressPdf(bytes, preset, helperPath) {
   if (!(bytes instanceof Uint8Array) || bytes.length < 5 || bytes.length > MAX_BYTES || Buffer.from(bytes.subarray(0, 5)).toString() !== '%PDF-') {
     throw new Error('The PDF could not be read for compression. Create it again.');
   }
-  if (preset === 'none') return { bytes, originalBytes: bytes.length, outputBytes: bytes.length, applied: false };
+  if (preset === 'none') return { bytes, originalBytes: bytes.length, outputBytes: bytes.length, applied: false, outcome: 'original-quality' };
   let directory;
   try {
     directory = await mkdtemp(path.join(os.tmpdir(), 'paperjoin-compress-'));
     const input = path.join(directory, 'input.pdf');
     const output = path.join(directory, 'output.pdf');
     await writeFile(input, bytes, { mode: 0o600 });
-    await runFile(helperPath, [input, output, preset], { timeout: 120_000, killSignal: 'SIGKILL', maxBuffer: 512 * 1024, windowsHide: true });
+    const execution = await runFile(helperPath, [input, output, preset], { timeout: 120_000, killSignal: 'SIGKILL', maxBuffer: 512 * 1024, windowsHide: true });
+    const metadata = JSON.parse(execution.stdout.trim());
     const info = await stat(output);
     if (!info.isFile() || info.size < 5 || info.size > MAX_BYTES) throw new Error('Invalid compression output.');
     const compressed = await readFile(output);
@@ -27,7 +28,7 @@ async function compressPdf(bytes, preset, helperPath) {
     // A rewrite can grow a compact PDF. Keep its existing quality when there is no size benefit.
     const applied = compressed.length < bytes.length;
     const result = applied ? compressed : bytes;
-    return { bytes: result, originalBytes: bytes.length, outputBytes: result.length, applied };
+    return { bytes: result, originalBytes: bytes.length, outputBytes: result.length, applied, outcome: ['compressed', 'already-compact', 'preserved-content'].includes(metadata.outcome) ? metadata.outcome : (applied ? 'compressed' : 'already-compact') };
   } catch (error) {
     if (error.code === 'ENOENT') throw new Error('Compression is unavailable in this app build. Choose Original quality or rebuild the app.');
     if (error.killed) throw new Error('Compression took too long. Try a smaller document or choose Original quality.');

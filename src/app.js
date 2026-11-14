@@ -1,4 +1,5 @@
 import { inspectPdf, assemblePdf } from './pdf-engine.js';
+import { optimizePdfLosslessly } from './pdf-optimizer.js';
 import * as pdfjs from './vendor/pdf.mjs';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.mjs', import.meta.url).href;
@@ -503,7 +504,7 @@ $('undo-button').addEventListener('click', () => {
 for (const id of ['image-size', 'image-margin']) $(id).addEventListener('change', () => { invalidateResult(); render(); announce('Image page settings updated. PDF pages keep their original size.'); });
 $('compression').addEventListener('change', () => {
   invalidateResult(); render();
-  announce(`${compressionPresets[$('compression').value].label} selected. Compression is applied when you export.`);
+  announce($('compression').value === 'none' ? 'Original quality selected. No extra compression will be applied.' : `${compressionPresets[$('compression').value].label} selected. Compression is applied when you export.`);
 });
 $('filename').addEventListener('input', invalidateResult);
 function safeFilename() {
@@ -523,13 +524,17 @@ $('export-form').addEventListener('submit', async (event) => {
     if (preset !== 'none') {
       if (!desktop?.compressPdf) throw new Error('Compression is available in the Mac desktop app.');
       busy = 'compress'; render(); announce('Compressing your PDF…');
-      const result = await desktop.compressPdf(bytes, preset);
+      const originalBytes = bytes.length;
+      const optimized = await optimizePdfLosslessly(bytes);
+      const result = await desktop.compressPdf(optimized.bytes, preset);
       bytes = new Uint8Array(result.bytes);
-      const saved = result.originalBytes - result.outputBytes;
-      const percentage = Math.round(saved / result.originalBytes * 100);
-      $('compression-result').textContent = result.applied
-        ? `${compressionPresets[preset].label} · ${percentage > 0 ? `${percentage}% smaller` : `${formatBytes(saved)} saved`} (${formatBytes(result.originalBytes)} → ${formatBytes(result.outputBytes)})`
-        : 'Already compact. Original quality retained.';
+      const saved = originalBytes - bytes.length;
+      const percentage = Math.round(saved / originalBytes * 100);
+      const reduction = `${percentage > 0 ? `${percentage}% smaller` : `${formatBytes(saved)} saved`} (${formatBytes(originalBytes)} → ${formatBytes(bytes.length)})`;
+      const preserved = result.outcome === 'preserved-content';
+      $('compression-result').textContent = saved > 0
+        ? `${result.applied ? compressionPresets[preset].label : 'Lossless optimization'} · ${reduction}${preserved ? '. Original text and graphics preserved.' : ''}`
+        : preserved ? 'Original quality retained to preserve this PDF’s text and layout.' : 'No safe size reduction found. Original quality retained.';
       $('compression-result').hidden = false;
     }
     resultUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));

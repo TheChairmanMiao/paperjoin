@@ -94,9 +94,20 @@ func run() throws {
           let candidate = PDFDocument(url: temporary) else {
         throw CompressionError.invalid("The PDF could not be compressed on this Mac.")
     }
-    try verify(candidate, against: original)
     let candidateBytes = try Data(contentsOf: temporary, options: .mappedIfSafe)
-    let applied = candidateBytes.count < originalBytes.count
+    var applied = false
+    var outcome = "already-compact"
+    if candidateBytes.count < originalBytes.count {
+        do {
+            try verify(candidate, against: original)
+            applied = true
+            outcome = "compressed"
+        } catch {
+            // Quartz can outline certain fonts and lose their selectable text.
+            // Reject that rewrite while allowing the original PDF to be saved.
+            outcome = "preserved-content"
+        }
+    }
     let finalBytes = applied ? candidateBytes : originalBytes
     try finalBytes.write(to: output, options: .atomic)
     let result: [String: Any] = [
@@ -104,6 +115,7 @@ func run() throws {
         "outputBytes": finalBytes.count,
         "applied": applied,
         "preset": presetName,
+        "outcome": outcome,
     ]
     let json = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
     FileHandle.standardOutput.write(json)
