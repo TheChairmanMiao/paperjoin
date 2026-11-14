@@ -1,6 +1,6 @@
 {
   "name": "pdf-combiner",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -22,7 +22,6 @@
   "productName": "Paperjoin",
   "main": "electron/main.cjs",
   "description": "A private PDF workspace for your Mac",
-  "author": "Jeffrey Miao",
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22.13.0"

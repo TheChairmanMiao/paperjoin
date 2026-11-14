@@ -4,7 +4,7 @@ A personal Mac app for combining PDFs, PNGs, and JPEGs into a single PDF. Files 
 
 ## Use
 
-After building with `npm run package:mac` (see Development below), open `output/desktop/1.1.0/Paperjoin-darwin-arm64/Paperjoin.app`. You can copy the app to your Applications folder if you want to keep it there.
+After building with `npm run package:mac` (see Development below), open `output/desktop/1.1.1/Paperjoin-darwin-arm64/Paperjoin.app`. You can copy the app to your Applications folder if you want to keep it there.
 
 1. Choose **Add files** or press **⌘O**. You can also drop files into the workspace.
 2. Drag pages into order, or use their arrow buttons. Click a thumbnail for a larger preview. Rotate or remove pages as needed; **Undo** reverses the last page change.

@@ -17,7 +17,7 @@ if (preview) {
   await writeFile(mainPath, main.replace("app.setName('Paperjoin');", "app.setName('Paperjoin Preview');\napp.setPath('userData', path.join(app.getPath('appData'), 'Paperjoin Preview'));"));
 }
 const original = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
-await writeFile(path.join(stage, 'package.json'), JSON.stringify({ name: 'paperjoin', productName: applicationName, version: original.version, description: 'A private PDF workspace for your Mac', main: 'electron/main.cjs', author: 'Jeffrey Miao', license: 'UNLICENSED' }, null, 2));
+await writeFile(path.join(stage, 'package.json'), JSON.stringify({ name: 'paperjoin', productName: applicationName, version: original.version, description: 'A private PDF workspace for your Mac', main: 'electron/main.cjs', license: 'UNLICENSED' }, null, 2));
 let electronZipDir;
 const cache = path.join(os.homedir(), 'Library/Caches/electron');
 const zipName = `electron-v${original.devDependencies.electron}-darwin-arm64.zip`;
@@ -28,7 +28,7 @@ try {
     try { await access(path.join(candidate, zipName)); electronZipDir = candidate; break; } catch {}
   }
 } catch {}
-const applications = await packager({ electronZipDir, extraResource: [path.join(root, 'native/bin/paperjoin-compress')], dir: stage, name: applicationName, platform: 'darwin', arch: 'arm64', electronVersion: original.devDependencies.electron, out: path.join(root, preview ? 'artifacts/desktop-preview' : `output/desktop/${original.version}`), overwrite: true, asar: true, prune: false, icon: path.join(root, 'assets/icon.icns'), appBundleId: preview ? 'com.jeffreymiao.paperjoin.preview' : 'com.jeffreymiao.paperjoin', appCategoryType: 'public.app-category.productivity', appVersion: original.version, buildVersion: original.version, executableName: applicationName, darwinDarkModeSupport: true });
+const applications = await packager({ electronZipDir, extraResource: [path.join(root, 'native/bin/paperjoin-compress')], dir: stage, name: applicationName, platform: 'darwin', arch: 'arm64', electronVersion: original.devDependencies.electron, out: path.join(root, preview ? 'artifacts/desktop-preview' : `output/desktop/${original.version}`), overwrite: true, asar: true, prune: false, icon: path.join(root, 'assets/icon.icns'), appBundleId: preview ? 'local.paperjoin.desktop.preview' : 'local.paperjoin.desktop', appCategoryType: 'public.app-category.productivity', appVersion: original.version, buildVersion: original.version, executableName: applicationName, darwinDarkModeSupport: true });
 for (const directory of applications) {
   const application = directory.endsWith('.app') ? directory : path.join(directory, `${applicationName}.app`);
   execFileSync('/usr/bin/codesign', ['--force', '--deep', '--sign', '-', application], { stdio: 'inherit' });
