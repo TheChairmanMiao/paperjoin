@@ -1,5 +1,6 @@
 import { inspectPdf, assemblePdf } from './pdf-engine.js';
 import { optimizePdfLosslessly } from './pdf-optimizer.js';
+import { optimizePdfAggressively } from './pdf-aggressive.js';
 import * as pdfjs from './vendor/pdf.mjs';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdf.worker.mjs', import.meta.url).href;
@@ -23,7 +24,8 @@ const compressionPresets = {
   none: { label: 'Original quality', description: 'Keeps the original image quality.' },
   high: { label: 'High quality', description: 'Light compression. Best for printing and detailed images.' },
   balanced: { label: 'Balanced', description: 'Smaller files with good image quality. Best for everyday sharing.' },
-  small: { label: 'Smallest file', description: 'Strongest compression. Images may look softer.' },
+  small: { label: 'Smaller file', description: 'Stronger image compression. Images may look softer.' },
+  aggressive: { label: 'Aggressive', description: 'Reduces fine detail in complex graphics for much smaller files.' },
 };
 const imageSettings = () => ({ imagePageSize: $('image-size').value, imageMargin: Number($('image-margin').value) });
 const pageWord = (count) => count === 1 ? 'page' : 'pages';
@@ -118,6 +120,9 @@ function render() {
   $('filename').disabled = busy;
   $('compression').disabled = !!busy || !desktop;
   $('compression-description').textContent = compressionPresets[$('compression').value].description;
+  $('compression-help').textContent = $('compression').value === 'aggressive'
+    ? 'Selectable text and links are kept. Detailed graphics may look softer when enlarged.'
+    : 'Works on PDFs and images. Existing selectable text is preserved.';
   const hasImages = activeSources.some((source) => source.kind !== 'pdf');
   $('image-size').disabled = busy || !hasImages;
   $('image-margin').disabled = busy || !hasImages;
@@ -210,6 +215,28 @@ function thumbnailKey(page) {
 }
 function canvasBlob(canvas, type = 'image/png', quality) {
   return new Promise((resolve, reject) => canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('This page is too large to preview.')), type, quality));
+}
+async function renderCompressionGraphic(bytes, { width, height }) {
+  const scale = 2; // 144 dpi keeps small text in outlined graphics readable.
+  const pixelWidth = Math.max(1, Math.ceil(width * scale));
+  const pixelHeight = Math.max(1, Math.ceil(height * scale));
+  if (pixelWidth * pixelHeight > 16_000_000 || Math.max(pixelWidth, pixelHeight) > 8192) {
+    throw new Error('This graphic is too large to compress safely.');
+  }
+  const task = pdfjs.getDocument({ data: new Uint8Array(bytes), isEvalSupported: false });
+  const canvas = document.createElement('canvas');
+  try {
+    const pdf = await task.promise;
+    const page = await pdf.getPage(1);
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport: page.getViewport({ scale }), background: 'rgba(0, 0, 0, 0)' }).promise;
+    return new Uint8Array(await (await canvasBlob(canvas)).arrayBuffer());
+  } finally {
+    canvas.width = 0;
+    canvas.height = 0;
+    await task.destroy();
+  }
 }
 async function pageImage(page, maxDimension) {
   const source = sources.get(page.sourceId);
@@ -526,14 +553,16 @@ $('export-form').addEventListener('submit', async (event) => {
       busy = 'compress'; render(); announce('Compressing your PDF…');
       const originalBytes = bytes.length;
       const optimized = await optimizePdfLosslessly(bytes);
-      const result = await desktop.compressPdf(optimized.bytes, preset);
+      const result = preset === 'aggressive'
+        ? await optimizePdfAggressively(optimized.bytes, { renderForm: renderCompressionGraphic })
+        : await desktop.compressPdf(optimized.bytes, preset);
       bytes = new Uint8Array(result.bytes);
       const saved = originalBytes - bytes.length;
       const percentage = Math.round(saved / originalBytes * 100);
       const reduction = `${percentage > 0 ? `${percentage}% smaller` : `${formatBytes(saved)} saved`} (${formatBytes(originalBytes)} → ${formatBytes(bytes.length)})`;
       const preserved = result.outcome === 'preserved-content';
       $('compression-result').textContent = saved > 0
-        ? `${result.applied ? compressionPresets[preset].label : 'Lossless optimization'} · ${reduction}${preserved ? '. Original text and graphics preserved.' : ''}`
+        ? `${result.applied ? compressionPresets[preset].label : 'Lossless optimization'} · ${reduction}${preset === 'aggressive' ? '. Selectable text and links preserved.' : preserved ? '. Original text and graphics preserved.' : ''}`
         : preserved ? 'Original quality retained to preserve this PDF’s text and layout.' : 'No safe size reduction found. Original quality retained.';
       $('compression-result').hidden = false;
     }
